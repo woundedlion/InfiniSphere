@@ -9,14 +9,14 @@ inline float mod_tau(float n) {
   return n;
 }
 
-template <uint8_t W, uint8_t H>
+template <int W, int H>
 class Projection
 {
   public:
 
     struct Point
     {
-      Point(uint8_t x, uint8_t y) :
+      Point(int x, int y) :
         x(x),
         y(y),
         lambda(x * tau / W - pi),
@@ -30,8 +30,8 @@ class Projection
         phi(p.phi)
       {}
     
-      uint8_t x;
-      uint8_t y;
+      int x;
+      int y;
       float lambda;
       float phi;
     };
@@ -39,7 +39,7 @@ class Projection
     Projection()
     {}
 
-    Point project(uint8_t bx, uint8_t by) const {
+    Point project(int bx, int by) const {
       Point p(bx, by);
 
       // rotate lambda

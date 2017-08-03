@@ -8,7 +8,7 @@ void trail_rainbow(CHSV& p, uint8_t falloff = 32) {
   c.v = qsub8(c.v, falloff);
 }
 
-template <uint8_t W, uint8_t H>
+template <int W, int H>
 class DotTrails {
   public:
     DotTrails() {
@@ -16,7 +16,7 @@ class DotTrails {
       memset(leds, 0, sizeof(leds));
       for (int i = 0; i < H - 1; ++i) {
         bool rev = i % 2 == 0;
-        uint8_t x = random8() % W;
+        int x = random() % W;
         dots[i] = Dot(x, rev, (random8() % 30) + 20);
       }
     }
@@ -28,7 +28,7 @@ class DotTrails {
     static bool show_bg() { return false; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {
+    void advance_col(int x) {
       for (int y = 0; y < H; ++y) {
         if (dots[y].x == x) {
           if (dots[y].drawn) {
@@ -46,8 +46,8 @@ class DotTrails {
     void advance_frame() {
     }
     
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
 private:
 
@@ -72,13 +72,13 @@ private:
 
   void move(Dot& dot) {
     if (dot.ttl == 0) {
-      dot.x = random8() % W;
+      dot.x = random() % W;
       dot.ttl = (random8() % 30) + 20;
     } else if (dot.rev) {
       dot.x = (dot.x - 1 + W) % W;
       dot.ttl--;
     } else {
-      dot.x = addmod8(dot.x, 1, W);
+      dot.x = (dot.x + 1) % W;
       dot.drawn = true;
       dot.ttl--;
     }
@@ -89,7 +89,7 @@ private:
   uint8_t hue = HUE_RED;
 };
 
-template <uint8_t W, uint8_t H>
+template <int W, int H>
 class RingTrails {
   public:
     RingTrails() {
@@ -103,7 +103,7 @@ class RingTrails {
     static bool show_bg() { return false; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {
+    void advance_col(int x) {
       if (x == 0 || x == W /2 ) {
         uint8_t dl = beatsin8(8, 1, 2);
         uint8_t dg = beatsin8(7, 1, 2, 16384);
@@ -124,8 +124,8 @@ class RingTrails {
     void advance_frame() {
     }
     
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
 private:
 
@@ -136,7 +136,7 @@ private:
   uint8_t hue = HUE_RED;
 };
 
-template <uint8_t W, uint8_t H>
+template <int W, int H>
 class Spirograph {
   public:
     Spirograph() {
@@ -150,7 +150,7 @@ class Spirograph {
     static bool show_bg() { return true; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {} 
+    void advance_col(int x) {} 
     void advance_frame() {
       int d = 5;
       int r = 2;
@@ -163,8 +163,8 @@ class Spirograph {
       t++;
     }
     
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
 private:
 
@@ -172,7 +172,7 @@ private:
   uint8_t t = 0;
 };
 
-template <uint8_t W, uint8_t H, const unsigned char (*DATA)[20][3]>
+template <int W, int H, const unsigned char (*DATA)[20][3]>
 class Image
 {
   public:
@@ -188,18 +188,18 @@ class Image
     static bool show_bg() { return true; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {} 
+    void advance_col(int x) {} 
     void advance_frame() {} 
 
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
   private:
 
     const unsigned char (*data_)[H][3];  
 };
 
-template <uint8_t W, uint8_t H, uint8_t S>
+template <int W, int H, int S>
 class Grid
 {
   public:
@@ -217,15 +217,15 @@ class Grid
     static bool show_bg() { return true; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {} 
+    void advance_col(int x) {} 
     void advance_frame() {} 
     
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
 };
 
-template <uint8_t W, uint8_t H, uint8_t S>
+template <int W, int H, int S>
 class Snake
 {
   public:
@@ -266,10 +266,10 @@ class Snake
     static bool show_bg() { return true; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {
+    void advance_col(int x) {
       if (x_timer_) {
-        head_x_ = addmod8(head_x_, 1, W);
-        head_x2_ = addmod8(head_x2_, 1, W);
+        head_x_ = (head_x_ + 1) % W;
+        head_x2_ = (head_x2_ + 1) % W;
       }
       if (y_timer_) {
         head_y_ = addmod8(head_y_, 1, H);
@@ -278,8 +278,8 @@ class Snake
     } 
     void advance_frame() {} 
     
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
 private:
 
@@ -288,8 +288,8 @@ private:
        int head_y = (head_y_ + y_offset) % H;
        int head_x2 = (head_x2_ + x_offset) % W;
        int head_y2 = (head_y2_ + y_offset) % H;
-       uint8_t x2 = W + 1 - x;
-       uint8_t y2 = H + 1 - y;
+       int x2 = W + 1 - x;
+       int y2 = H + 1 - y;
        return (
               (x == head_x && y == head_y)
            || (x2 == head_x && y2 == head_y)
@@ -303,15 +303,15 @@ private:
           );  
     }
   
-    uint8_t head_x_;
-    uint8_t head_y_;
-    uint8_t head_x2_;
-    uint8_t head_y2_;
+    int head_x_;
+    int head_y_;
+    int head_x2_;
+    int head_y2_;
     CEveryNMillis x_timer_;
     CEveryNMillis y_timer_;
 };
 
-template <uint8_t W, uint8_t H>
+template <int W, int H>
 class Kaleidoscope
 {
   public:
@@ -327,24 +327,24 @@ class Kaleidoscope
     static bool show_bg() { return false; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {  
+    void advance_col(int x) {  
       nscale8(&leds_[x][0], H, 60);      
     }
     
     void advance_frame() {
       for (uint8_t i = 0; i < counts_[count_]; ++i) {
-        uint8_t x = addmod8(i * offset_, tx_, W); 
-        uint8_t y = ty_;
-        uint8_t x2 = W - 1 - x;
-        uint8_t y2 =  H - 1 - y;
+        int x = ((i * offset_) + tx_) % W; 
+        int y = ty_;
+        int x2 = W - 1 - x;
+        int y2 =  H - 1 - y;
         leds_[x][y] = palette_[addmod8(palette_offset_, i * (16 / counts_[count_]), 16)];
         leds_[x2][y2] = leds_[x][y], palette_[addmod8(palette_offset_ , 16 - (i * (16 / counts_[count_])), 16)];
       }
-      tx_ = addmod8(tx_, 2 , W); 
-      ty_ = addmod8(ty_, inc_y_, H);
+      tx_ = (tx_+ 2) % W; 
+      ty_ = (ty_ + inc_y_) % H;
       if (ty_ == H - 1 || ty_ == 0) {
         inc_y_ = 0 - inc_y_;
-        tx_ = addmod8(tx_,2, W); 
+        tx_ = (tx_ + 2) % W; 
       }
 
       EVERY_N_MILLISECONDS(100) {
@@ -356,23 +356,23 @@ class Kaleidoscope
       }
     }
     
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
 private:
   
   CRGB leds_[W][H];
   uint8_t counts_[9] = {1, 2, 4, 5, 6, 8, 10, 12, 20};
   uint8_t count_ = 0;
-  uint8_t offset_ = W / counts_[count_];
-  uint8_t tx_ = 0;
-  uint8_t ty_ = 0;
+  int offset_ = W / counts_[count_];
+  int tx_ = 0;
+  int ty_ = 0;
   int inc_y_ = 1;
   CRGBPalette16 palette_;
   uint8_t palette_offset_ = 0;
 };
 
-template <uint8_t W, uint8_t H, uint8_t S>
+template <int W, int H, int S>
 class Plaid
 {
   public:
@@ -399,7 +399,7 @@ class Plaid
     static bool show_bg() { return true; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {} 
+    void advance_col(int x) {} 
     
     void advance_frame() {
       if (color_shift_timer_) {
@@ -409,8 +409,8 @@ class Plaid
       }
     } 
     
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
 private:
 
@@ -420,7 +420,7 @@ private:
   CHSV c3_;
 };
 
-template <uint8_t W, uint8_t H, uint8_t SPREAD>
+template <int W, int H, int SPREAD>
 class Spiral
 {
   public:
@@ -439,18 +439,18 @@ class Spiral
     static bool show_bg() { return true; }    
     static CRGB bg_color() { return CRGB::Black; }    
    
-    void advance_col(uint8_t x) {} 
+    void advance_col(int x) {} 
     void advance_frame() {} 
   
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
   private:
         
     CRGBPalette16 palette_;
 };
 
-template <uint8_t W, uint8_t H>
+template <int W, int H>
 class Stars
 {
   public:
@@ -465,20 +465,20 @@ class Stars
     static bool show_bg() { return true; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {} 
+    void advance_col(int x) {} 
     void advance_frame() {
       hue_++;
     } 
     
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
     
     private:
     
       uint8_t hue_;
 };
 
-template <uint8_t W, uint8_t H>
+template <int W, int H>
 class StarsFade
 {
   public:
@@ -493,7 +493,7 @@ class StarsFade
     static bool show_bg() { return true; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {
+    void advance_col(int x) {
       nscale8(&leds_[x][0], H, 100);      
     }
     
@@ -506,8 +506,8 @@ class StarsFade
       hue_++;
     } 
     
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
     
     private:
 
@@ -515,7 +515,7 @@ class StarsFade
       uint8_t hue_;
 };
 
-template <uint8_t W, uint8_t H>
+template <int W, int H>
 class Spinner
 {
   public:
@@ -550,9 +550,9 @@ class Spinner
     static bool show_bg() { return false; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {
+    void advance_col(int x) {
       if (spin_timer_) {
-        pos_ = addmod8(pos_, 1, W);
+        pos_ = (pos_ + 1) % W;
       }
     } 
 
@@ -567,21 +567,21 @@ class Spinner
       }
     } 
            
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
            
   private:
        
     CRGBPalette16 palette1_;
     CRGBPalette16 palette2_;
     CEveryNMillis spin_timer_;
-    uint8_t pos_;
+    int pos_;
     bool swap = false;
-    uint8_t p[5] = { 20, 10, 4, 2, 1 };
+    uint8_t p[7] = { 144, 72, 36, 18, 9, 2, 1 };
     uint8_t i = 0;
 };
 
-template <uint8_t W, uint8_t H, uint8_t COOL, uint8_t SPARK>
+template <int W, int H, uint8_t COOL, uint8_t SPARK>
 class Fire
 {
   public:
@@ -597,7 +597,7 @@ class Fire
     static bool show_bg() { return false; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {
+    void advance_col(int x) {
       cool(x);
       rise(x);
       spark(x);    
@@ -605,8 +605,8 @@ class Fire
 
     void advance_frame() {} 
 
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }    
+    int width() const { return W; }
+    int height() const { return H; }    
   
   private:
   
@@ -632,7 +632,7 @@ class Fire
     uint8_t heat_[W][H];
 };
 
-template <uint8_t W, uint8_t H, uint16_t DURATION, bool BG>
+template <int W, int H, int DURATION, bool BG>
 class PaletteFall
 {
   public:
@@ -652,7 +652,7 @@ class PaletteFall
     static bool show_bg() { return BG; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {
+    void advance_col(int x) {
     }
     
     void advance_frame() {
@@ -662,8 +662,8 @@ class PaletteFall
       }
     } 
 
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
   private:
 
@@ -691,7 +691,7 @@ class PaletteFall
     uint8_t palette_offset_;
 };
 
-template <uint8_t W, uint8_t H, uint8_t HUE>
+template <int W, int H, uint8_t HUE>
 class TheMatrix
 {
   public:
@@ -710,7 +710,7 @@ class TheMatrix
     static bool show_bg() { return true; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {
+    void advance_col(int x) {
       fall(x);
       generate(x);
     }
@@ -718,8 +718,8 @@ class TheMatrix
     void advance_frame() {
     } 
 
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
   private:
 
@@ -739,7 +739,7 @@ class TheMatrix
     uint8_t pixels_[W][H];
 };
 
-template <uint8_t W, uint8_t H, uint8_t HUE, uint8_t BURNRATE>
+template <int W, int H, uint8_t HUE, uint8_t BURNRATE>
 class Burnout
 {
   public:
@@ -767,7 +767,7 @@ class Burnout
     static bool show_bg() { return true; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {
+    void advance_col(int x) {
       if (timer_) {
         burnout();
       }
@@ -777,8 +777,8 @@ class Burnout
     void advance_frame() {
     } 
 
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
   private:
 
@@ -828,7 +828,7 @@ class Burnout
     int burn_idx_;
 };
 
-template <uint8_t W, uint8_t H>
+template <int W, int H>
 class Rotate
 {
   public:
@@ -845,7 +845,7 @@ class Rotate
     bool show_bg() { return bg; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {
+    void advance_col(int x) {
       if (x == 0 || x == W / 2) {
         projection.rotate(0, 5, 0);
       }
@@ -866,8 +866,8 @@ class Rotate
         }
     }
 
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
   private:
   
@@ -880,7 +880,7 @@ class Rotate
     bool bg = 0;
 };
 
-template <uint8_t W, uint8_t H>
+template <int W, int H>
 class RotateWave
 {
   public:
@@ -897,7 +897,7 @@ class RotateWave
     bool show_bg() { return false; }    
     static CRGB bg_color() { return CRGB::Black; }    
 
-    void advance_col(uint8_t x) {
+    void advance_col(int x) {
       if (x == 0 || x == W / 2) {
         projection.rotate(0, 5, 0);
       }
@@ -915,8 +915,8 @@ class RotateWave
         ++c_off;
     }
 
-    uint8_t width() const { return W; }
-    uint8_t height() const { return H; }
+    int width() const { return W; }
+    int height() const { return H; }
 
   private:
   
@@ -925,13 +925,13 @@ class RotateWave
     bool equals_wave(const Point& p) const {
       uint8_t freq = W / 3;
       int amp = beatsin8(5, 0, 3);
-      uint8_t origin = H / 2;
+      int origin = H / 2;
       return p.y == map8(triwave8(map(mod8(p.x, freq), 0, freq - 1 , 0, 255)), origin - amp, origin + amp);
     }
 
     CRGB buf[W][H];
     CRGBPalette16 pal;
-    uint8_t c_off = 0;
+    int c_off = 0;
     Projection<W, H> projection;
 };
 

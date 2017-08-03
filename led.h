@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "effects.h"
 
-template <size_t S>
+template <int S>
 class POVDisplay
 {
   public:
@@ -9,7 +9,7 @@ class POVDisplay
     leds_(leds),
     rpm_(rpm)
     {
-      FastLED.addLeds<WS2801, 11, 13, RGB, DATA_RATE_MHZ(4)>(leds, S);
+      FastLED.addLeds<APA102, 11, 13, BGR, DATA_RATE_MHZ(8)>(leds, S);
     }
 
   template <typename Effect>
