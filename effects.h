@@ -1,12 +1,12 @@
 #include <FastLED.h>
 #include "rotate.h"
-
 void trail_rainbow(CHSV& p, uint8_t falloff = 32) {
   CHSV& c = p;
   c.h += falloff;
   c.s = 255;
   c.v = qsub8(c.v, falloff);
 }
+
 
 template <int W, int H>
 class DotTrails {
@@ -113,7 +113,7 @@ class RingTrails {
 
       for (int y = 0; y < H; ++y) {
         Point p = projection.project(x, y);
-        if (p.y == 9) {
+        if (p.y == H / 2) {
           leds[x][y] = CHSV(hue - 32, 0, 255);
         } else {
           trail_rainbow(leds[x][y]);
@@ -135,6 +135,8 @@ private:
   CHSV leds[W][H];
   uint8_t hue = HUE_RED;
 };
+
+/*
 
 template <int W, int H>
 class Spirograph {
@@ -310,7 +312,7 @@ private:
     CEveryNMillis x_timer_;
     CEveryNMillis y_timer_;
 };
-
+*/
 template <int W, int H>
 class Kaleidoscope
 {
@@ -367,11 +369,11 @@ private:
   int offset_ = W / counts_[count_];
   int tx_ = 0;
   int ty_ = 0;
-  int inc_y_ = 1;
+  int inc_y_ = 4;
   CRGBPalette16 palette_;
   uint8_t palette_offset_ = 0;
 };
-
+/*
 template <int W, int H, int S>
 class Plaid
 {
@@ -419,8 +421,9 @@ private:
   CHSV c2_;
   CHSV c3_;
 };
+*/
 
-template <int W, int H, int SPREAD>
+template <unsigned int W, unsigned int H>
 class Spiral
 {
   public:
@@ -429,9 +432,9 @@ class Spiral
       fill_rainbow(palette_.entries, 16, 0, 256 / 16);
     }
     
-    CRGB get_pixel(int x, int y) const {
-      if ((x + y) % (SPREAD + 1) == 0) {
-        return palette_[(x + y) % 16];
+    CRGB get_pixel(unsigned int x, unsigned int y) const {
+      if ((x + y) % (spread_ + 1) == 0) {
+        return palette_[(uint8_t)(((x + y) / (spread_ + 1)) % 16)];
       }
       return CRGB::Black;
     }
@@ -440,7 +443,13 @@ class Spiral
     static CRGB bg_color() { return CRGB::Black; }    
    
     void advance_col(int x) {} 
-    void advance_frame() {} 
+    void advance_frame() {
+      EVERY_N_MILLIS(5000) {
+        if (spread_++ > 5) {
+          spread_ = 0;
+        }
+      }
+    }
   
     int width() const { return W; }
     int height() const { return H; }
@@ -448,8 +457,10 @@ class Spiral
   private:
         
     CRGBPalette16 palette_;
+    uint8_t spread_ = 0;
 };
 
+/*
 template <int W, int H>
 class Stars
 {
@@ -477,14 +488,16 @@ class Stars
     
       uint8_t hue_;
 };
-
+*/
 template <int W, int H>
 class StarsFade
 {
   public:
     StarsFade() :
     hue_(0)
-    {}
+    {
+      memset(leds_, 0, sizeof(leds_));
+    }
     
     CRGB get_pixel(int x, int y) const {
       return leds_[x][y];
@@ -494,15 +507,13 @@ class StarsFade
     static CRGB bg_color() { return CRGB::Black; }    
 
     void advance_col(int x) {
-      nscale8(&leds_[x][0], H, 100);      
+      nscale8(&leds_[x][0], H, 200);      
+      uint8_t xn = map8(random8(), 0, W - 1);
+      uint8_t yn = map8(random8(), 0, H - 1);
+      leds_[xn][yn] = CRGB(CHSV(hue_, 255, 255));
     }
     
     void advance_frame() {
-      EVERY_N_MILLISECONDS(100) {
-        uint8_t x = map8(random8(), 0, W - 1);
-        uint8_t y = map8(random8(), 0, H - 1);
-        leds_[x][y] = CRGB(CHSV(hue_, 255, 255));
-      }
       hue_++;
     } 
     
@@ -515,6 +526,7 @@ class StarsFade
       uint8_t hue_;
 };
 
+
 template <int W, int H>
 class Spinner
 {
@@ -525,10 +537,10 @@ class Spinner
     {
       memset(palette1_, 0, sizeof(palette1_));
       memset(palette2_, 0, sizeof(palette1_));
-      palette1_[0] = palette1_[8] = CRGB::Red;
-      palette1_[1] = palette1_[9] = CRGB::Yellow;
-      palette2_[0] = palette2_[8] = CRGB::Cyan;
-      palette2_[1] = palette2_[9] = CRGB::Blue; 
+      palette1_[0] = palette1_[8] = CRGB::Pink;
+      palette1_[1] = palette1_[9] = CRGB::Purple;
+      palette2_[0] = palette2_[8] = CRGB::Blue;
+      palette2_[1] = palette2_[9] = CRGB::Purple; 
     }
     
     CRGB get_pixel(int x, int y) const {
@@ -577,7 +589,7 @@ class Spinner
     CEveryNMillis spin_timer_;
     int pos_;
     bool swap = false;
-    uint8_t p[7] = { 144, 72, 36, 18, 9, 2, 1 };
+    uint8_t p[7] = { 144, 72, 36, 18, 9};
     uint8_t i = 0;
 };
 
@@ -588,6 +600,7 @@ class Fire
   
     Fire() {
       random16_add_entropy(random());    
+      memset(heat_, 0 , sizeof(heat_));
     }
   
     CRGB get_pixel(int x, int y) const {   
@@ -610,22 +623,22 @@ class Fire
   
   private:
   
-    inline void cool(uint8_t x) {
-       for (uint8_t y = 0; y < H; ++y) {
-         heat_[x][y] = qsub8(heat_[x][y], random(0, ((COOL * 10) / H) + 2));          
+    inline void cool(int x) {
+       for (int y = 0; y < H; ++y) {
+         heat_[x][y] = max(0, heat_[x][y] - random(0, ((COOL * 10) / H) + 2));          
       }
     }
 
     inline void rise(uint8_t x) {
-      for (uint8_t y = H - 1; y >= 2; --y) {
+      for (int y = H - 1; y >= 2; --y) {
         heat_[x][H - 1 - y] = (heat_[x][H - 1 - y + 1] + heat_[x][H - 1 - y + 2] + heat_[x][H - 1 - y + 2]) / 3;
       }       
     }
  
     inline void spark(uint8_t x) {
       if (random8() < SPARK) {
-        uint8_t y = random8(3);
-        heat_[x][H - 1 - y] = qadd8(heat_[x][H - 1 - y], random8(160, 255));
+        int y = random8(3);
+        heat_[x][H - 1 - y] = min(255, heat_[x][H - 1 - y] + random8(160, 255));
       }
     }
     
@@ -670,13 +683,13 @@ class PaletteFall
     void switch_palette() {
       switch (palette_idx_) {
         case 0:
-          palette_ = RainbowColors_p;
+          palette_ = HeatColors_p;
           break;
         case 2:
           palette_ = PartyColors_p;
           break;
         case 3:
-          palette_ = HeatColors_p;
+          palette_ = RainbowColors_p;
           break;
         case 4:
           palette_ = RainbowStripeColors_p;
@@ -686,7 +699,7 @@ class PaletteFall
     }
 
     CEveryNMillis timer_;
-    uint8_t palette_idx_;
+    uint8_t palette_idx_ = 0;
     CRGBPalette16 palette_;
     uint8_t palette_offset_;
 };
@@ -738,6 +751,8 @@ class TheMatrix
     
     uint8_t pixels_[W][H];
 };
+
+/*
 
 template <int W, int H, uint8_t HUE, uint8_t BURNRATE>
 class Burnout
@@ -828,6 +843,7 @@ class Burnout
     int burn_idx_;
 };
 
+*/
 template <int W, int H>
 class Rotate
 {
@@ -851,7 +867,8 @@ class Rotate
       }
       for (int y = 0; y < H; ++y) {
         Point p = projection.project(x, y);
-        if (p.y == 3 || p.y == 10 || p.y == 17) {
+ //       if (p.y == 24 || p.y == H / 2 || p.y == H - 1 - 24) {
+        if (p.y % (H / 6) == 0) {
           buf[x][y] =  ColorFromPalette(pal, (p.x + c_off) * 255 / W);
         } else {
           buf[x][y] = CRGB::Black;
@@ -862,7 +879,7 @@ class Rotate
     void advance_frame() {
         ++c_off;
         EVERY_N_SECONDS(10) {
-          bg = !bg;
+//          bg = !bg;
         }
     }
 
@@ -879,6 +896,7 @@ class Rotate
     uint8_t c_off = 0;
     bool bg = 0;
 };
+/*
 
 template <int W, int H>
 class RotateWave
@@ -935,5 +953,5 @@ class RotateWave
     Projection<W, H> projection;
 };
 
-
+*/
 
