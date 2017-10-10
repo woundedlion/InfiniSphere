@@ -1,3 +1,4 @@
+#include <fixmath.h>
 
 const float pi = 3.1415926535897f;
 const float tau = 2 * pi;

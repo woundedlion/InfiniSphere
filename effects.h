@@ -1,5 +1,18 @@
 #include <FastLED.h>
 #include "rotate.h"
+
+class Effect {
+  public:
+    virtual ~Effect() {};
+    virtual CRGB get_pixel(int x, int y) const = 0;
+    virtual bool show_bg() { return true; };
+    virtual CRGB bg_color() { return CRGB::Black; }
+    virtual void advance_col(int x) = 0;
+    virtual void advance_frame() = 0;
+    virtual int width() const = 0;
+    virtual int height() const = 0;
+};
+
 void trail_rainbow(CHSV& p, uint8_t falloff = 32) {
   CHSV& c = p;
   c.h += falloff;
@@ -9,7 +22,7 @@ void trail_rainbow(CHSV& p, uint8_t falloff = 32) {
 
 
 template <int W, int H>
-class DotTrails {
+class DotTrails : public Effect {
   public:
     DotTrails() {
       random16_add_entropy(random());    
@@ -25,8 +38,8 @@ class DotTrails {
       return leds[x][y];
     }
         
-    static bool show_bg() { return false; }    
-    static CRGB bg_color() { return CRGB::Black; }    
+    bool show_bg() { return false; }    
+    CRGB bg_color() { return CRGB::Black; }    
 
     void advance_col(int x) {
       for (int y = 0; y < H; ++y) {
@@ -89,6 +102,7 @@ private:
   uint8_t hue = HUE_RED;
 };
 
+/*
 template <int W, int H>
 class RingTrails {
   public:
@@ -312,7 +326,7 @@ private:
     CEveryNMillis x_timer_;
     CEveryNMillis y_timer_;
 };
-*/
+
 template <int W, int H>
 class Kaleidoscope
 {
@@ -421,7 +435,7 @@ private:
   CHSV c2_;
   CHSV c3_;
 };
-*/
+
 
 template <unsigned int W, unsigned int H>
 class Spiral
@@ -488,7 +502,7 @@ class Stars
     
       uint8_t hue_;
 };
-*/
+
 template <int W, int H>
 class StarsFade
 {
@@ -843,7 +857,7 @@ class Burnout
     int burn_idx_;
 };
 
-*/
+
 template <int W, int H>
 class Rotate
 {
