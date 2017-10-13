@@ -16,16 +16,16 @@ void setup() {
 
 void loop() {
   while (true) { 
+          pov.show<Rotate<64, H> >(60000);
+
       pov.show<DotTrails<100, H> >(120000);
-    /*
-      pov.show<DotTrails<100, H> >(120000);
-      pov.show<RingTrails<64, H> >(120000);
-      pov.show<Fire<100, H, 120, 120> >(120000);
       pov.show<StarsFade<64, H> >(120000);
-      pov.show<Spiral<64, H> >(120000);
-      pov.show<Rotate<64, H> >(120000);
+      pov.show<WaveTrails<100, H> >(120000);
+      pov.show<RingTrails<64, H> >(120000);
+      pov.show<Spiral<64, H> >(60000);
+      pov.show<Fire<100, H, 120, 120> >(120000);
+      pov.show<Rotate<64, H> >(60000);
       pov.show<PaletteFall<36, H, 5000, true> >(60000);
-      */
   }
 }
 

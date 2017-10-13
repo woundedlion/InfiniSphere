@@ -13,11 +13,11 @@ class Effect {
     virtual int height() const = 0;
 };
 
-void trail_rainbow(CHSV& p, uint8_t falloff = 32) {
+void trail_rainbow(CHSV& p, uint8_t hue_falloff = 32, uint8_t dim_falloff = 32) {
   CHSV& c = p;
-  c.h += falloff;
+  c.h += hue_falloff;
   c.s = 255;
-  c.v = qsub8(c.v, falloff);
+  c.v = qsub8(c.v, dim_falloff);
 }
 
 
@@ -51,7 +51,7 @@ class DotTrails : public Effect {
             move(dots[y]);
           }
         } else {
-          trail_rainbow(leds[x][y], 12);
+          trail_rainbow(leds[x][y], 12, 12);
         }
       }
     } 
@@ -102,9 +102,91 @@ private:
   uint8_t hue = HUE_RED;
 };
 
-/*
 template <int W, int H>
-class RingTrails {
+class WaveTrails2 : public Effect {
+  public:
+    WaveTrails2() {
+      random16_add_entropy(random());    
+      memset(leds, 0, sizeof(leds));
+    }
+    
+    CRGB get_pixel(int x, int y) const {
+      return leds[x][y];
+    }
+        
+    bool show_bg() { return false; }    
+    CRGB bg_color() { return CRGB::Black; }    
+
+    void advance_col(int x) {
+      for (int y = 0; y < H; ++y) {
+        trail_rainbow(leds[x][y], 5, 32);
+      }
+      leds[x][wave_y(x)] = CHSV(HUE_BLUE, 0, 255); 
+    } 
+
+    void advance_frame() {
+      
+    }
+    
+    int width() const { return W; }
+    int height() const { return H; }
+
+private:
+
+    int wave_y(int x) const {
+      uint16_t freq = W / 5;
+      int amp = beatsin8(30, -H/4, H/4);
+      int origin = H / 2;
+      return map(sin8(map(x % freq, 0, freq - 1 , 0, 255)), 0, 255, origin + amp, origin - amp);
+    }
+
+  CHSV leds[W][H];
+};
+
+template <int W, int H>
+class WaveTrails : public Effect {
+  public:
+    WaveTrails() {
+      random16_add_entropy(random());    
+      memset(leds, 0, sizeof(leds));
+    }
+    
+    CRGB get_pixel(int x, int y) const {
+      return leds[x][y];
+    }
+        
+    bool show_bg() { return false; }    
+    CRGB bg_color() { return CRGB::Black; }    
+
+    void advance_col(int x) {
+      for (int y = 0; y < H; ++y) {
+        trail_rainbow(leds[x][y], 5, 16);
+      }
+      leds[x][beatsin16(5, H/15, H*14/15, 0, 
+        map(x, 0, W-1, 0, 65535))] = CHSV(HUE_BLUE, 0, 255); 
+      leds[x][beatsin16(5, 0, H-1, 0, 
+        map(W - 1 - x, 0, W-1, 0, 65535))] = CHSV(HUE_GREEN, 0, 255); 
+      leds[x][beatsin16(5, H/15, H*14/15, 32767, 
+        map(x, 0, W-1, 0, 65535))] = CHSV(HUE_BLUE, 0, 255); 
+      leds[x][beatsin16(5, 0, H-1, 32767, 
+        map(W - 1 - x, 0, W-1, 0, 65535))] = CHSV(HUE_GREEN, 0, 255); 
+    } 
+
+    void advance_frame() {
+      
+    }
+    
+    int width() const { return W; }
+    int height() const { return H; }
+
+private:
+
+  CHSV leds[W][H];
+};
+
+
+template <int W, int H>
+class RingTrails : public Effect{
   public:
     RingTrails() {
       memset(leds, 0, sizeof(leds));
@@ -114,14 +196,14 @@ class RingTrails {
       return leds[x][y];
     }
         
-    static bool show_bg() { return false; }    
-    static CRGB bg_color() { return CRGB::Black; }    
+    bool show_bg() { return false; }    
+    CRGB bg_color() { return CRGB::Black; }    
 
     void advance_col(int x) {
       if (x == 0 || x == W /2 ) {
         uint8_t dl = beatsin8(8, 1, 2);
-        uint8_t dg = beatsin8(7, 1, 2, 16384);
-        uint8_t dp = beatsin8(9, 1, 2, 32768);
+        uint8_t dg = beatsin8(7, 1, 2, 1000);
+        uint8_t dp = beatsin8(9, 1, 2, 2000);
         projection.rotate(dl, dg, dp);    
       }
 
@@ -130,7 +212,7 @@ class RingTrails {
         if (p.y == H / 2) {
           leds[x][y] = CHSV(hue - 32, 0, 255);
         } else {
-          trail_rainbow(leds[x][y]);
+          trail_rainbow(leds[x][y], 32, 32);
         }
       }
     } 
@@ -148,6 +230,243 @@ private:
 
   CHSV leds[W][H];
   uint8_t hue = HUE_RED;
+};
+
+
+template <unsigned int W, unsigned int H>
+class Spiral : public Effect
+{
+  public:
+    Spiral()
+    {
+      fill_rainbow(palette_.entries, 16, 0, 256 / 16);
+    }
+    
+    CRGB get_pixel(int x, int y) const {
+      if ((x + y) % (spread_ + 1) == 0) {
+        return palette_[(uint8_t)(((x + y) / (spread_ + 1)) % 16)];
+      }
+      return CRGB::Black;
+    }
+        
+    bool show_bg() { return true; }    
+    CRGB bg_color() { return CRGB::Black; }    
+   
+    void advance_col(int x) {} 
+    void advance_frame() {
+      EVERY_N_MILLIS(5000) {
+        if (spread_++ > 5) {
+          spread_ = 0;
+        }
+      }
+    }
+  
+    int width() const { return W; }
+    int height() const { return H; }
+
+  private:
+        
+    CRGBPalette16 palette_;
+    uint8_t spread_ = 0;
+};
+
+
+template <int W, int H>
+class StarsFade : public Effect
+{
+  public:
+    StarsFade() :
+    hue_(0)
+    {
+      memset(leds_, 0, sizeof(leds_));
+    }
+    
+    CRGB get_pixel(int x, int y) const {
+      return leds_[x][y];
+    }
+        
+    bool show_bg() { return true; }    
+    CRGB bg_color() { return CRGB::Black; }    
+
+    void advance_col(int x) {
+      nscale8(&leds_[x][0], H, 200);      
+      uint8_t xn = map8(random8(), 0, W - 1);
+      uint8_t yn = map8(random8(), 0, H - 1);
+      leds_[xn][yn] = CRGB(CHSV(hue_, 255, 255));
+    }
+    
+    void advance_frame() {
+      hue_++;
+    } 
+    
+    int width() const { return W; }
+    int height() const { return H; }
+    
+    private:
+
+      CRGB leds_[W][H];
+      uint8_t hue_;
+};
+
+template <int W, int H, uint8_t COOL, uint8_t SPARK>
+class Fire : public Effect
+{
+  public:
+  
+    Fire() {
+      random16_add_entropy(random());    
+      memset(heat_, 0 , sizeof(heat_));
+    }
+  
+    CRGB get_pixel(int x, int y) const {   
+      return HeatColor(heat_[x][y]);
+    }
+
+    bool show_bg() { return false; }    
+    CRGB bg_color() { return CRGB::Black; }    
+
+    void advance_col(int x) {
+      cool(x);
+      rise(x);
+      spark(x);    
+    } 
+
+    void advance_frame() {} 
+
+    int width() const { return W; }
+    int height() const { return H; }    
+  
+  private:
+  
+    inline void cool(int x) {
+       for (int y = 0; y < H; ++y) {
+         heat_[x][y] = max(0, heat_[x][y] - random(0, ((COOL * 10) / H) + 2));          
+      }
+    }
+
+    inline void rise(uint8_t x) {
+      for (int y = H - 1; y >= 2; --y) {
+        heat_[x][H - 1 - y] = (heat_[x][H - 1 - y + 1] + heat_[x][H - 1 - y + 2] + heat_[x][H - 1 - y + 2]) / 3;
+      }       
+    }
+ 
+    inline void spark(uint8_t x) {
+      if (random8() < SPARK) {
+        int y = random8(3);
+        heat_[x][H - 1 - y] = min(255, heat_[x][H - 1 - y] + random8(160, 255));
+      }
+    }
+    
+    uint8_t heat_[W][H];
+};
+
+template <int W, int H>
+class Rotate : public Effect
+{
+  public:
+
+    Rotate() {
+      memset(buf, 0, sizeof(buf));
+      fill_rainbow(pal.entries, 256, 0, 1);
+    }
+
+    CRGB get_pixel(int x, int y) const {
+      return buf[x][y];
+    }
+
+    bool show_bg() { return false; }    
+    CRGB bg_color() { return CRGB::Black; }    
+
+    void advance_col(int x) {
+      if (x == 0 || x == W / 2) {
+        projection.rotate(0, 5, 0);
+      }
+      CRGB color = pal[(x + c_off) * 255 / W];
+      for (int y = 0; y < H; ++y) {
+        Point p = projection.project(x, y);
+ //       if (p.y == 24 || p.y == H / 2 || p.y == H - 1 - 24) {
+        if (p.y % (H / 6) == 0) {
+          buf[x][y] =  color; //ColorFromPalette(pal, (p.x + c_off) * 255 / W);
+        } else {
+          buf[x][y] = CRGB::Black;
+        }
+      }      
+    }
+    
+    void advance_frame() {
+        ++c_off;
+    }
+
+    int width() const { return W; }
+    int height() const { return H; }
+
+  private:
+  
+    typedef typename Projection<W, H>::Point Point;
+    Projection<W, H> projection;
+
+    CRGB buf[W][H];
+    CRGBPalette256 pal;
+    uint8_t c_off = 0;
+};
+
+template <int W, int H, int DURATION, bool BG>
+class PaletteFall : public Effect
+{
+  public:
+
+    PaletteFall() :
+      timer_(DURATION),
+      palette_idx_(0),
+      palette_(RainbowColors_p),
+      palette_offset_(0)
+    {
+    }
+
+    CRGB get_pixel(int x, int y) const {
+      return palette_[addmod8(H - 1 - y, palette_offset_, 16)];
+    }
+
+    bool show_bg() { return BG; }    
+    CRGB bg_color() { return CRGB::Black; }    
+
+    void advance_col(int x) {
+    }
+    
+    void advance_frame() {
+      palette_offset_ = addmod8(palette_offset_, 1, 16);
+      if (timer_) {
+        switch_palette();
+      }
+    } 
+
+    int width() const { return W; }
+    int height() const { return H; }
+
+  private:
+
+    void switch_palette() {
+      switch (palette_idx_) {
+        case 0:
+          palette_ = HeatColors_p;
+          break;
+        case 2:
+          palette_ = PartyColors_p;
+          break;
+        case 3:
+          palette_ = RainbowColors_p;
+          break;
+        case 4:
+          palette_ = RainbowStripeColors_p;
+          break;
+      }
+      palette_idx_ = addmod8(palette_idx_, 1, 5);
+    }
+
+    CEveryNMillis timer_;
+    uint8_t palette_idx_ = 0;
+    CRGBPalette16 palette_;
+    uint8_t palette_offset_;
 };
 
 /*
@@ -437,109 +756,6 @@ private:
 };
 
 
-template <unsigned int W, unsigned int H>
-class Spiral
-{
-  public:
-    Spiral()
-    {
-      fill_rainbow(palette_.entries, 16, 0, 256 / 16);
-    }
-    
-    CRGB get_pixel(unsigned int x, unsigned int y) const {
-      if ((x + y) % (spread_ + 1) == 0) {
-        return palette_[(uint8_t)(((x + y) / (spread_ + 1)) % 16)];
-      }
-      return CRGB::Black;
-    }
-        
-    static bool show_bg() { return true; }    
-    static CRGB bg_color() { return CRGB::Black; }    
-   
-    void advance_col(int x) {} 
-    void advance_frame() {
-      EVERY_N_MILLIS(5000) {
-        if (spread_++ > 5) {
-          spread_ = 0;
-        }
-      }
-    }
-  
-    int width() const { return W; }
-    int height() const { return H; }
-
-  private:
-        
-    CRGBPalette16 palette_;
-    uint8_t spread_ = 0;
-};
-
-/*
-template <int W, int H>
-class Stars
-{
-  public:
-    Stars() :
-    hue_(0)
-    {}
-    
-    CRGB get_pixel(int x, int y) const {
-      return random8() > 250 ? CRGB(CHSV(hue_, 255, 255)) : CRGB::Black;
-    }
-        
-    static bool show_bg() { return true; }    
-    static CRGB bg_color() { return CRGB::Black; }    
-
-    void advance_col(int x) {} 
-    void advance_frame() {
-      hue_++;
-    } 
-    
-    int width() const { return W; }
-    int height() const { return H; }
-    
-    private:
-    
-      uint8_t hue_;
-};
-
-template <int W, int H>
-class StarsFade
-{
-  public:
-    StarsFade() :
-    hue_(0)
-    {
-      memset(leds_, 0, sizeof(leds_));
-    }
-    
-    CRGB get_pixel(int x, int y) const {
-      return leds_[x][y];
-    }
-        
-    static bool show_bg() { return true; }    
-    static CRGB bg_color() { return CRGB::Black; }    
-
-    void advance_col(int x) {
-      nscale8(&leds_[x][0], H, 200);      
-      uint8_t xn = map8(random8(), 0, W - 1);
-      uint8_t yn = map8(random8(), 0, H - 1);
-      leds_[xn][yn] = CRGB(CHSV(hue_, 255, 255));
-    }
-    
-    void advance_frame() {
-      hue_++;
-    } 
-    
-    int width() const { return W; }
-    int height() const { return H; }
-    
-    private:
-
-      CRGB leds_[W][H];
-      uint8_t hue_;
-};
-
 
 template <int W, int H>
 class Spinner
@@ -607,116 +823,7 @@ class Spinner
     uint8_t i = 0;
 };
 
-template <int W, int H, uint8_t COOL, uint8_t SPARK>
-class Fire
-{
-  public:
-  
-    Fire() {
-      random16_add_entropy(random());    
-      memset(heat_, 0 , sizeof(heat_));
-    }
-  
-    CRGB get_pixel(int x, int y) const {   
-      return HeatColor(heat_[x][y]);
-    }
 
-    static bool show_bg() { return false; }    
-    static CRGB bg_color() { return CRGB::Black; }    
-
-    void advance_col(int x) {
-      cool(x);
-      rise(x);
-      spark(x);    
-    } 
-
-    void advance_frame() {} 
-
-    int width() const { return W; }
-    int height() const { return H; }    
-  
-  private:
-  
-    inline void cool(int x) {
-       for (int y = 0; y < H; ++y) {
-         heat_[x][y] = max(0, heat_[x][y] - random(0, ((COOL * 10) / H) + 2));          
-      }
-    }
-
-    inline void rise(uint8_t x) {
-      for (int y = H - 1; y >= 2; --y) {
-        heat_[x][H - 1 - y] = (heat_[x][H - 1 - y + 1] + heat_[x][H - 1 - y + 2] + heat_[x][H - 1 - y + 2]) / 3;
-      }       
-    }
- 
-    inline void spark(uint8_t x) {
-      if (random8() < SPARK) {
-        int y = random8(3);
-        heat_[x][H - 1 - y] = min(255, heat_[x][H - 1 - y] + random8(160, 255));
-      }
-    }
-    
-    uint8_t heat_[W][H];
-};
-
-template <int W, int H, int DURATION, bool BG>
-class PaletteFall
-{
-  public:
-
-    PaletteFall() :
-      timer_(DURATION),
-      palette_idx_(0),
-      palette_(RainbowColors_p),
-      palette_offset_(0)
-    {
-    }
-
-    CRGB get_pixel(int x, int y) const {
-      return palette_[addmod8(H - 1 - y, palette_offset_, 16)];
-    }
-
-    static bool show_bg() { return BG; }    
-    static CRGB bg_color() { return CRGB::Black; }    
-
-    void advance_col(int x) {
-    }
-    
-    void advance_frame() {
-      palette_offset_ = addmod8(palette_offset_, 1, 16);
-      if (timer_) {
-        switch_palette();
-      }
-    } 
-
-    int width() const { return W; }
-    int height() const { return H; }
-
-  private:
-
-    void switch_palette() {
-      switch (palette_idx_) {
-        case 0:
-          palette_ = HeatColors_p;
-          break;
-        case 2:
-          palette_ = PartyColors_p;
-          break;
-        case 3:
-          palette_ = RainbowColors_p;
-          break;
-        case 4:
-          palette_ = RainbowStripeColors_p;
-          break;
-      }
-      palette_idx_ = addmod8(palette_idx_, 1, 5);
-    }
-
-    CEveryNMillis timer_;
-    uint8_t palette_idx_ = 0;
-    CRGBPalette16 palette_;
-    uint8_t palette_offset_;
-};
 
 template <int W, int H, uint8_t HUE>
 class TheMatrix
@@ -857,60 +964,6 @@ class Burnout
     int burn_idx_;
 };
 
-
-template <int W, int H>
-class Rotate
-{
-  public:
-
-    Rotate() {
-      memset(buf, 0, sizeof(buf));
-      fill_rainbow(pal.entries, 16, 0, 256 / 16);
-    }
-
-    CRGB get_pixel(int x, int y) const {
-      return buf[x][y];
-    }
-
-    bool show_bg() { return bg; }    
-    static CRGB bg_color() { return CRGB::Black; }    
-
-    void advance_col(int x) {
-      if (x == 0 || x == W / 2) {
-        projection.rotate(0, 5, 0);
-      }
-      for (int y = 0; y < H; ++y) {
-        Point p = projection.project(x, y);
- //       if (p.y == 24 || p.y == H / 2 || p.y == H - 1 - 24) {
-        if (p.y % (H / 6) == 0) {
-          buf[x][y] =  ColorFromPalette(pal, (p.x + c_off) * 255 / W);
-        } else {
-          buf[x][y] = CRGB::Black;
-        }
-      }      
-    }
-    
-    void advance_frame() {
-        ++c_off;
-        EVERY_N_SECONDS(10) {
-//          bg = !bg;
-        }
-    }
-
-    int width() const { return W; }
-    int height() const { return H; }
-
-  private:
-  
-    typedef typename Projection<W, H>::Point Point;
-    Projection<W, H> projection;
-
-    CRGB buf[W][H];
-    CRGBPalette16 pal;
-    uint8_t c_off = 0;
-    bool bg = 0;
-};
-/*
 
 template <int W, int H>
 class RotateWave

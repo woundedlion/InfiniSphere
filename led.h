@@ -14,6 +14,7 @@ class POVDisplay
     template <typename Effect>
     void show(unsigned long duration)
     { 
+      t = micros();
       effect = new Effect();
       x = 0;
       IntervalTimer timer;
@@ -44,14 +45,20 @@ class POVDisplay
       } else if (x == effect->width()) {
         x = 0;
         effect->advance_frame();
+        Serial.println(micros() - t);
+        t = micros();
       }
       interrupts();
     }
-  
+
+    static unsigned long t;
     static CRGB leds[NUM_PIXELS];
     static Effect *effect;
     static int x;
 };
+
+template<int NUM_PIXELS, int RPM>
+unsigned long POVDisplay<NUM_PIXELS, RPM>::t = 0;
 
 template<int NUM_PIXELS, int RPM>
 int POVDisplay<NUM_PIXELS, RPM>::x = 0;
