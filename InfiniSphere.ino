@@ -16,8 +16,6 @@ void setup() {
 
 void loop() {
   while (true) { 
-          pov.show<Rotate<64, H> >(60000);
-
       pov.show<DotTrails<100, H> >(120000);
       pov.show<StarsFade<64, H> >(120000);
       pov.show<WaveTrails<100, H> >(120000);

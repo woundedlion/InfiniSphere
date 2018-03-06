@@ -19,7 +19,7 @@ class POVDisplay
       x = 0;
       IntervalTimer timer;
       timer.begin(show_col, 1000000 / (RPM / 60) / effect->width()); 
-      delay(duration * 1000);
+      delay(duration);
       timer.end();
       delete effect;
       effect = NULL;
